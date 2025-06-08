@@ -1,0 +1,49 @@
+{
+  "name": "senzidee/monolog-parseable-handler",
+  "description": "Monolog Handler for send logs to parseable in json through http",
+  "keywords": ["log", "logging", "psr-3"],
+  "homepage": "https://github.com/senzidee/monolog-parseable-handler",
+  "type": "library",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Mario Ravalli",
+      "email": "mario@raval.li",
+      "homepage": "https://mario.raval.li"
+    }
+  ],
+  "require": {
+    "php": ">=8.1",
+    "ext-curl": "*",
+    "monolog/monolog": "^3.0"
+  },
+  "require-dev": {
+    "friendsofphp/php-cs-fixer": "^3.75",
+    "guzzlehttp/guzzle": "^7.4.5",
+    "guzzlehttp/psr7": "^2.2",
+    "php-mock/php-mock": "^2.6",
+    "phpunit/phpunit": "^10.5",
+    "vimeo/psalm": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "SenzaIdee\\": "src"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "SenzaIdee\\Tests\\": "tests"
+    }
+  },
+  "scripts": {
+    "test": "@php vendor/bin/phpunit",
+    "cs-fixer": "@php vendor/bin/php-cs-fixer fix src",
+    "psalm": "@php vendor/bin/psalm"
+  },
+  "config": {
+    "lock": false,
+    "sort-packages": true,
+    "platform-check": false
+  },
+  "version": "1.0.0"
+}

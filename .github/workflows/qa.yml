@@ -1,0 +1,37 @@
+name: Quality assurance
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '../../composer.json'
+      - '../../.php-cs-fixer.dist.php'
+  push:
+    paths:
+      - '../../composer.json'
+      - '../../.php-cs-fixer.dist.php'
+jobs:
+  quality-assurance:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        version: ["8.1", "8.2", "8.3"]
+    steps:
+      - name: 🚚 Get latest code
+        uses: actions/checkout@v3
+
+      - name: 🐘 Setup PHP Version and Extensions
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.version }}
+
+      - name: 🔨 Build Project
+        run: composer install --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+
+      - name: 🙈Linter
+        run: composer cs-fixer
+
+      - name: 🙈Static Check
+        run: composer psalm
+
+      - name: 🙈PHPUnit
+        run: composer test
