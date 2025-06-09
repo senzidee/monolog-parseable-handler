@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## [1.0.1](https://github.com/senzidee/monolog-parseable-handler/compare/8156683645f5aaea40d3e92e29da96dd824e78b8..1.0.1) - 2025-06-09
+#### Tests
+- fix unit test to respect full endpoint - ([8156683](https://github.com/senzidee/monolog-parseable-handler/commit/8156683645f5aaea40d3e92e29da96dd824e78b8)) - [@senzidee](https://github.com/senzidee)
+
+- - -
+
 ## [1.0.0](https://github.com/senzidee/monolog-parseable-handler/compare/3f2cc18cfa0d91d53c87ce12f004dd269820f795..1.0.0) - 2025-06-09
 #### Documentation
 - Add USAGE docs - ([b402382](https://github.com/senzidee/monolog-parseable-handler/commit/b40238284af744a8a238d274b44859dbec51a66c)) - [@senzidee](https://github.com/senzidee)
