@@ -1,0 +1,149 @@
+name: Version Management with Cog
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'composer.json'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'composer.json'
+
+jobs:
+  version-management:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      packages: write
+      attestations: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Complete fetch for Cog
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Cog
+        run: |
+          # Install Cog
+          curl -L https://github.com/cocogitto/cocogitto/releases/download/6.3.0/cocogitto-6.3.0-x86_64-unknown-linux-musl.tar.gz | tar xz --strip-components=1 x86_64-unknown-linux-musl/cog
+          sudo mv cog /usr/local/bin/
+          cog --version
+
+      - name: Setup Git
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+
+      - name: Check version change in composer.json
+        id: version-check
+        run: |
+          CMP_VERSION=$(grep -E '^  "version":' composer.json | cut -d':' -f2 | tr -d '"' | tr -d "'" | xargs)
+
+          echo "version=$CMP_VERSION" >> $GITHUB_OUTPUT
+
+          COG_VERSION=$(cog get-version 2>/dev/null || echo "0.0.0")
+          echo "cog_version=$COG_VERSION" >> $GITHUB_OUTPUT
+
+          if [ "$CMP_VERSION" != "$COG_VERSION" ] && [ -n "$CMP_VERSION" ]; then
+            echo "version_changed=true" >> $GITHUB_OUTPUT
+            echo "✅ Version changed: Cog '$COG_VERSION' → composer '$CMP_VERSION'"
+          else
+            echo "version_changed=false" >> $GITHUB_OUTPUT
+            echo "ℹ️ Version updated: $CMP_VERSION"
+          fi
+
+      - name: Validate version format
+        if: steps.version-check.outputs.version_changed == 'true'
+        run: |
+          VERSION="${{ steps.version-check.outputs.version }}"
+
+          # Validate semantic versioning format
+          if [[ $VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?(\+[a-zA-Z0-9.-]+)?$ ]]; then
+            echo "✅ Valid version format: $VERSION"
+          else
+            echo "❌ Invalid version format: $VERSION"
+            echo "Use Semantic Versioning format (e.g.: 1.0.0, 2.1.3-beta, 1.0.0+build.1)"
+            exit 1
+          fi
+
+      - name: Check conventional commits
+        if: steps.version-check.outputs.version_changed == 'true'
+        run: |
+          echo "🔍 Checking conventional commits..."
+
+          # Check if there are conventional commits since the last tag
+          if cog check --from-latest-tag 2>/dev/null; then
+            echo "✅ Valid Conventional commits"
+          else
+            echo "⚠️ Unable to find conventional commits from the last tag"
+            echo "BTW Cog does its work"
+          fi
+
+      - name: Create tag with Cog
+        if: steps.version-check.outputs.version_changed == 'true' && github.ref == 'refs/heads/main'
+        run: |
+          VERSION="${{ steps.version-check.outputs.version }}"
+
+          if git tag -l | grep -q "^$VERSION$"; then
+            echo "⚠️ Tag $VERSION already exists"
+            exit 0
+          fi
+
+          echo "🏷️ Make a new tag $VERSION with Cog..."
+
+          cog bump --version $VERSION
+
+          echo "✅ Tag $VERSION successfully created"
+
+      - name: Generate and save changelog
+        if: steps.version-check.outputs.version_changed == 'true' && github.ref == 'refs/heads/main'
+        run: |
+          VERSION="${{ steps.version-check.outputs.version }}"
+          echo "📝 Generating changelog for version $VERSION..."
+
+          # Generate the changelog and save it to CHANGELOG.md
+          cog changelog --at $VERSION > CHANGELOG.md
+
+          # Commit the updated changelog
+          git add CHANGELOG.md
+          git commit -m "docs: update CHANGELOG.md for version $VERSION [skip ci]"
+          git push origin main
+
+          echo "✅ Changelog updated and committed"
+
+      - name: Push tags
+        if: steps.version-check.outputs.version_changed == 'true' && github.ref == 'refs/heads/main'
+        run: |
+          echo "🚀 Push tag..."
+          git push origin --tags
+          echo "✅ Tag on origin"
+
+      - name: Create GitHub Release
+        if: steps.version-check.outputs.version_changed == 'true' && github.ref == 'refs/heads/main'
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.version-check.outputs.version }}
+          release_name: Release ${{ steps.version-check.outputs.version }}
+          body_path: CHANGELOG.md
+          draft: false
+          prerelease: ${{ contains(steps.version-check.outputs.version, '-') }}
+
+      - name: Verify Cog status
+        if: always()
+        run: |
+          echo "📊 Cog Status:"
+          echo "Current version: $(cog get-version)"
+          echo "Last tag: $(git describe --tags --abbrev=0 2>/dev/null || echo 'no tag')"
+
+          if cog log --no-error 2>/dev/null | head -5; then
+            echo "✅ Cog log available"
+          else
+            echo "ℹ️ There are no conventional commits"
+          fi
