@@ -19,6 +19,8 @@ class ParseableHandlerTest extends TestCase
     private string $stream = 'test-stream';
     private string $username = 'test-user';
     private string $password = 'test-password';
+    private string $fullEndpoint = 'https://parseable.example.com:8000/api/v1/ingest';
+    private int $port = 8000;
     private HttpClientInterface $mockHttpClient;
     private ParseableHandler $handler;
 
@@ -33,6 +35,7 @@ class ParseableHandlerTest extends TestCase
             $this->stream,
             $this->username,
             $this->password,
+            $this->port,
             Level::Debug,
             true,
             $this->mockHttpClient
@@ -61,7 +64,7 @@ class ParseableHandlerTest extends TestCase
         $this->mockHttpClient->expects($this->once())
             ->method('send')
             ->with(
-                $this->equalTo($this->host),
+                $this->equalTo($this->fullEndpoint),
                 $this->callback(function($headers) {
                     return in_array('Content-Type: application/json', $headers)
                         && in_array('X-P-Stream: ' . $this->stream, $headers)
@@ -92,6 +95,7 @@ class ParseableHandlerTest extends TestCase
             $this->stream,
             $this->username,
             $this->password,
+            $this->port,
             Level::Info,
             true,
             $mockHttpClient
@@ -148,7 +152,7 @@ class ParseableHandlerTest extends TestCase
         $mockHttpClient->expects($this->once())
             ->method('send')
             ->with(
-                $this->equalTo($this->host),
+                $this->equalTo($this->fullEndpoint),
                 $this->anything(),
                 $this->equalTo(json_encode(['batch' => 'test']))
             );
@@ -173,7 +177,7 @@ class ParseableHandlerTest extends TestCase
         $this->mockHttpClient->expects($this->once())
             ->method('send')
             ->with(
-                $this->equalTo($this->host),
+                $this->equalTo($this->fullEndpoint),
                 $this->callback(function($headers) {
                     return in_array('Content-Type: application/json', $headers)
                         && in_array('X-P-Stream: ' . $this->stream, $headers)
