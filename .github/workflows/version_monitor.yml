@@ -106,12 +106,11 @@ jobs:
           VERSION="${{ steps.version-check.outputs.version }}"
           echo "📝 Generating changelog for version $VERSION..."
 
-          # Generate the changelog and save it to CHANGELOG.md
-          cog changelog --at $VERSION > CHANGELOG.md
+          cog changelog --at $VERSION > RELEASE.md
+          cog changelog > CHANGELOG.md
 
-          # Commit the updated changelog
           git add CHANGELOG.md
-          git commit -m "docs: update CHANGELOG.md for version $VERSION [skip ci]"
+          git commit -m "docs: update CHANGELOG.md for version $VERSION"
           git push origin main
 
           echo "✅ Changelog updated and committed"
@@ -131,7 +130,7 @@ jobs:
         with:
           tag_name: ${{ steps.version-check.outputs.version }}
           release_name: Release ${{ steps.version-check.outputs.version }}
-          body_path: CHANGELOG.md
+          body_path: RELEASE.md
           draft: false
           prerelease: ${{ contains(steps.version-check.outputs.version, '-') }}
 
